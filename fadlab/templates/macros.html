@@ -1,0 +1,22 @@
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+{% macro filters(term, placeholder='Pesquisar', extra=none) %}
+<form class="filters" method="get" role="search">
+  <label class="sr-only" for="q">{{ placeholder }}</label>
+  <input id="q" name="q" type="search" value="{{ term }}" placeholder="{{ placeholder }}" maxlength="100">
+  {% if extra %}{{ extra() }}{% endif %}
+  <button type="submit">Filtrar</button>
+</form>
+{% endmacro %}
+{% macro pagination(result) %}
+{% if result and (result.has_prev or result.has_next) %}
+<nav class="pager" aria-label="Paginação">
+  {% if result.has_prev %}
+  <a class="button secondary" href="?{{ dict(request.args, page=result.prev_num)|urlencode }}">Anterior</a>
+  {% endif %}
+  <span>Página {{ result.page }} de {{ result.pages }}</span>
+  {% if result.has_next %}
+  <a class="button secondary" href="?{{ dict(request.args, page=result.next_num)|urlencode }}">Próxima</a>
+  {% endif %}
+</nav>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import csrf %}
+{% set title = 'Perfil' %}
+{% block content %}
+<h1>Meu perfil</h1>
+<section class="panel form-panel">
+  <p class="muted">{{ current_user.email }}</p>
+  <form class="stack" method="post">
+    {{ csrf() }}
+    <label>Nome <input name="name" required maxlength="100" autocomplete="name" value="{{ current_user.name }}"></label>
+    <label>Aparência
+      <select name="theme">
+        {% for key, label in themes.items() %}<option value="{{ key }}"{% if key == current_user.theme %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" name="notice_highlights" value="yes"{% if current_user.show_notice_highlights %} checked{% endif %}> Destacar avisos não lidos no início</label>
+    <fieldset class="stack">
+      <legend>Alterar senha</legend>
+      <label>Senha atual <input type="password" name="previous" autocomplete="current-password" maxlength="128"></label>
+      <label>Nova senha <input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="128"></label>
+    </fieldset>
+    <button type="submit">Salvar perfil</button>
+  </form>
+</section>
+{% if avatar_storage %}
+<section class="panel form-panel">
+  <h2>Foto de perfil</h2>
+  <form method="post" action="{{ url_for('avatars.update') }}" enctype="multipart/form-data" class="stack">
+    {{ csrf() }}
+    <label>Imagem JPG, PNG ou WebP (até 1 MB)
+      <input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required>
+    </label>
+    <button class="secondary">Atualizar foto</button>
+  </form>
+  {% if current_user.avatar_key %}
+  <details>
+    <summary>Remover a foto atual</summary>
+    <form method="post" action="{{ url_for('avatars.update') }}">{{ csrf() }}<button class="danger" name="remove" value="yes">Confirmar remoção</button></form>
+  </details>
+  {% endif %}
+</section>
+{% endif %}
+<form action="{{ url_for('auth.sign_out') }}" method="post" class="form-panel">{{ csrf() }}<button class="secondary">Sair da conta</button></form>
+{% endblock %}

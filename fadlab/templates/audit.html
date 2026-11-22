@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import pagination %}
+{% set title = 'Auditoria' %}
+{% block content %}
+<header class="page-heading"><h1>Auditoria</h1><a href="{{ url_for('views.admin') }}">Voltar</a></header>
+<ul class="panel records compact">
+  {% for row in result.items %}
+  <li><strong>{{ row.action }} · {{ row.resource }}{% if row.resource_id %} #{{ row.resource_id }}{% endif %}</strong>
+    <span>{{ row.created_at.strftime('%d/%m/%Y %H:%M') }} UTC · Usuário #{{ row.actor_id or '—' }}</span></li>
+  {% else %}<li class="muted">Nenhuma alteração registrada.</li>{% endfor %}
+</ul>
+{{ pagination(result) }}
+{% endblock %}

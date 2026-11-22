@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% set title = 'Mais' %}
+{% block content %}
+<h1>Mais</h1>
+<div class="panel menu-list">
+  {% for slug in ['ministerios', 'louvor', 'repertorios', 'sonoplastia', 'historico'] %}
+    <a href="{{ url_for('views.listing', key=slug) }}">{{ modules[slug].label }}</a>
+  {% endfor %}
+  <a href="{{ url_for('views.members') }}">Membros</a>
+  <a href="{{ url_for('auth.profile') }}">Meu perfil</a>
+  {% if is_admin() %}<a href="{{ url_for('views.admin') }}">Administração</a>{% endif %}
+</div>
+{% endblock %}

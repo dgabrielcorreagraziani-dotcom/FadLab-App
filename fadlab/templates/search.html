@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import filters %}
+{% set title = 'Pesquisa' %}
+{% block content %}
+<h1>Pesquisa</h1>
+{{ filters(term, 'Pesquisar no FadLab') }}
+{% if result.values()|select|list %}
+<div class="record-grid">
+  {% for slug, items in result.items() if items %}
+  <section class="panel">
+    <div class="section-title"><h2>{{ modules[slug].label }}</h2><a href="{{ url_for('views.listing', key=slug, q=term) }}">Abrir</a></div>
+    <ul class="records compact">{% for item in items %}<li>{{ value(item, modules[slug].fields[0]) }}</li>{% endfor %}</ul>
+  </section>
+  {% endfor %}
+</div>
+{% else %}
+<p class="panel muted">{{ 'Nenhum resultado encontrado.' if term|length >= 2 else 'Digite pelo menos dois caracteres.' }}</p>
+{% endif %}
+{% endblock %}

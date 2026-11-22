@@ -1,0 +1,63 @@
+{% macro icon(name) -%}
+  <span class="icon icon-{{ name }}" aria-hidden="true"></span>
+{%- endmacro %}
+<!doctype html>
+<html lang="pt-BR" data-theme="{{ current_user.theme if current_user.is_authenticated else 'system' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#181622">
+  <title>{{ title|default('Início') }} · FadLab</title>
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icon-192.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+{% set signed_in = current_user.is_authenticated %}
+{% set endpoint = request.endpoint or '' %}
+{% set active = request.view_args.get('key') if request.view_args else none %}
+{% set nav = [
+  ('Início', 'home', url_for('views.dashboard'), endpoint == 'views.dashboard'),
+  ('Agenda', 'calendar', url_for('views.listing', key='agenda'), active == 'agenda'),
+  ('Escalas', 'users', url_for('views.listing', key='escalas'), active == 'escalas'),
+  ('Avisos', 'bell', url_for('views.listing', key='avisos'), active == 'avisos'),
+  ('Mais', 'menu', url_for('views.more'), endpoint == 'views.more')
+] %}
+<a class="skip" href="#main">Ir para o conteúdo</a>
+{% if signed_in %}
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('views.dashboard') }}"><span class="brand-mark">F</span>FadLab</a>
+    <div class="top-actions">
+      <a class="icon-button" href="{{ url_for('views.search') }}" aria-label="Pesquisar">{{ icon('search') }}</a>
+      <a class="avatar" href="{{ url_for('auth.profile') }}" aria-label="Meu perfil">{% if avatar_storage and current_user.avatar_key %}<img src="{{ url_for('avatars.show') }}" alt="" width="44" height="44">{% else %}{{ current_user.name[:1]|upper }}{% endif %}</a>
+    </div>
+  </header>
+  <nav class="side" aria-label="Áreas do FadLab">
+    {% for label, glyph, href, selected in nav %}
+      {% if glyph != 'menu' %}<a href="{{ href }}"{% if selected %} aria-current="page"{% endif %}>{{ icon(glyph) }}{{ label }}</a>{% endif %}
+    {% endfor %}
+    {% for slug, module in modules.items() %}
+      {% if slug in ['ministerios', 'louvor', 'sonoplastia'] %}
+      <a href="{{ url_for('views.listing', key=slug) }}"{% if active == slug %} aria-current="page"{% endif %}>{{ icon(module.icon) }}{{ module.label }}</a>
+      {% endif %}
+    {% endfor %}
+    <a href="{{ url_for('views.members') }}"{% if endpoint == 'views.members' %} aria-current="page"{% endif %}>{{ icon('users') }}Membros</a>
+    {% if is_admin() %}<a href="{{ url_for('views.admin') }}"{% if endpoint == 'views.admin' %} aria-current="page"{% endif %}>{{ icon('settings') }}Administração</a>{% endif %}
+    <a href="{{ url_for('auth.profile') }}" {% if endpoint == 'auth.profile' %}aria-current="page"{% endif %}>{{ icon('user') }}Perfil</a>
+  </nav>
+  <nav class="dock" aria-label="Navegação principal">
+    {% for label, glyph, href, selected in nav %}
+      <a href="{{ href }}"{% if selected %} aria-current="page"{% endif %}>{{ icon(glyph) }}<span>{{ label }}</span></a>
+    {% endfor %}
+  </nav>
+{% endif %}
+<main id="main" class="{{ 'workspace' if signed_in else 'auth-shell' }}">
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <p class="feedback {{ category }}" role="{{ 'alert' if category == 'error' else 'status' }}">{{ message }}</p>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

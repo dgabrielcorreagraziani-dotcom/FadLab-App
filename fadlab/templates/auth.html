@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import csrf %}
+{% block content %}
+<section class="panel auth-panel">
+  <div class="brand"><span class="brand-mark">F</span>FadLab</div>
+  <h1>{{ title }}</h1>
+  <form class="stack" method="post">
+    {{ csrf() }}
+    {% if mode == 'register' %}
+    <label>Nome <input name="name" autocomplete="name" required maxlength="100"></label>
+    {% endif %}
+    {% if mode == 'reset' %}
+    <label id="reset-code-label">Código recebido por e-mail <input id="reset-code" name="code" required maxlength="43" value="{{ code|default('') }}" autocomplete="off"></label>
+    {% endif %}
+    {% if mode != 'reset' %}
+    <label>E-mail <input name="email" type="email" autocomplete="email" required maxlength="254"></label>
+    {% endif %}
+    {% if mode != 'forgot' %}
+    <label>Senha <input name="password" type="password" required maxlength="128"
+      {% if mode == 'login' %} autocomplete="current-password"{% else %} autocomplete="new-password" minlength="12" aria-describedby="password-help"{% endif %}></label>
+    {% if mode != 'login' %}<p class="muted" id="password-help">Use pelo menos 12 caracteres.</p>{% endif %}
+    {% endif %}
+    <button type="submit">{{ {'login': 'Entrar', 'register': 'Criar conta', 'forgot': 'Enviar link', 'reset': 'Salvar senha'}[mode] }}</button>
+  </form>
+  <div class="auth-links">
+    {% if mode == 'login' %}
+      <a href="{{ url_for('auth.forgot') }}">Esqueci a senha</a>
+      {% if registration_open %}<a href="{{ url_for('auth.register') }}">Criar conta</a>{% endif %}
+    {% else %}
+      <a href="{{ url_for('auth.sign_in') }}">Voltar para entrar</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

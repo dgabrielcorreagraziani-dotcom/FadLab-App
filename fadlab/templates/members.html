@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import filters, pagination %}
+{% set title = 'Membros' %}
+{% macro ministry_filter() %}
+<select name="ministry" aria-label="Ministério">
+  <option value="">Todos os ministérios</option>
+  {% for id, name in ministries %}
+  <option value="{{ id }}"{% if request.args.get('ministry', type=int) == id %} selected{% endif %}>{{ name }}</option>
+  {% endfor %}
+</select>
+{% endmacro %}
+{% block content %}
+<header class="page-heading"><h1>Membros</h1>{% if is_admin() %}<a class="button" href="{{ url_for('views.admin') }}">Gerenciar membros</a>{% endif %}</header>
+{{ filters(term, 'Pesquisar por nome', ministry_filter) }}
+<ul class="panel records compact">
+  {% for user in result.items %}<li><strong>{{ user.name }}</strong>{% if is_admin() %}<span>{{ user.email }}</span>{% endif %}</li>
+  {% else %}<li class="muted">Nenhum membro encontrado.</li>{% endfor %}
+</ul>
+{{ pagination(result) }}
+{% endblock %}

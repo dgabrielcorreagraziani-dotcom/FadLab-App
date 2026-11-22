@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import csrf, filters, pagination %}
+{% set title = 'Administração' %}
+{% block content %}
+<header class="page-heading"><h1>Administração</h1><a class="button secondary" href="{{ url_for('views.audit_log') }}">Auditoria</a></header>
+<details class="panel">
+  <summary>Configurações do cadastro</summary>
+  <form class="stack" method="post">
+    {{ csrf() }}<input type="hidden" name="action" value="settings">
+    <label class="check"><input type="checkbox" name="registration" value="yes"{% if registration_open %} checked{% endif %}> Permitir criação de contas</label>
+    <button class="secondary">Salvar configuração</button>
+  </form>
+</details>
+{{ filters(term, 'Pesquisar usuários') }}
+<div class="record-grid">
+  {% for user in result.items %}
+  <article class="panel record">
+    <h2>{{ user.name }}</h2>
+    <p class="muted">{{ user.email }} · {{ user.role }}</p>
+    <details>
+      <summary>Editar nome</summary>
+      <form class="stack" method="post">
+        {{ csrf() }}<input type="hidden" name="user_id" value="{{ user.id }}">
+        <label>Nome <input name="name" maxlength="100" required value="{{ user.name }}"></label>
+        <button class="secondary" name="action" value="rename">Salvar nome</button>
+      </form>
+    </details>
+    {% if user.id != current_user.id %}
+    <form class="stack" method="post">
+      {{ csrf() }}<input type="hidden" name="user_id" value="{{ user.id }}"><input type="hidden" name="action" value="role">
+      <label>Papel <select name="role">{% for role in roles %}<option{% if user.role == role %} selected{% endif %}>{{ role }}</option>{% endfor %}</select></label>
+      <label class="check"><input type="checkbox" name="enabled" value="yes"{% if user.enabled %} checked{% endif %}> Conta ativa</label>
+      <button class="secondary">Salvar permissões</button>
+    </form>
+    {% endif %}
+    <h3>Ministérios</h3>
+    <ul class="records compact">
+      {% for membership in memberships.get(user.id, []) %}
+      <li>
+        <strong>{{ membership.ministry.name }}{% if membership.coordinates %} · Coordenação{% endif %}</strong>
+        <details>
+          <summary>Remover vínculo</summary>
+          <form method="post">
+            {{ csrf() }}<input type="hidden" name="user_id" value="{{ user.id }}">
+            <input type="hidden" name="ministry_id" value="{{ membership.ministry_id }}">
+            <button class="danger" name="action" value="remove_membership">Confirmar remoção</button>
+          </form>
+        </details>
+      </li>
+      {% else %}<li class="muted">Sem vínculos.</li>{% endfor %}
+    </ul>
+    {% if ministries %}
+    <form class="stack" method="post">
+      {{ csrf() }}<input type="hidden" name="user_id" value="{{ user.id }}">
+      <label>Ministério <select name="ministry_id">{% for id, name in ministries %}<option value="{{ id }}">{{ name }}</option>{% endfor %}</select></label>
+      {% if user.role == 'COORDINATOR' %}<label class="check"><input type="checkbox" name="coordinates" value="yes"> Pode coordenar</label>{% endif %}
+      <button class="secondary" name="action" value="membership">Salvar vínculo</button>
+    </form>
+    {% endif %}
+  </article>
+  {% else %}<p class="panel muted">Nenhum usuário encontrado.</p>{% endfor %}
+</div>
+{{ pagination(result) }}
+{% endblock %}

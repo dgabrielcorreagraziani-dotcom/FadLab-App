@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import csrf %}
+{% block content %}
+<header class="page-heading"><h1>{{ title }}</h1><a href="{{ url_for('views.listing', key=key) }}">Voltar</a></header>
+<section class="panel form-panel">
+  <form class="stack" method="post">
+    {{ form.hidden_tag() }}
+    {% for field in form if field.name != 'csrf_token' %}
+      <label for="{{ field.id }}">{{ field.label.text }}</label>
+      {{ field(rows=4) if field.type == 'TextAreaField' else field() }}
+      {% for error in field.errors %}<p class="field-error" role="alert">{{ error }}</p>{% endfor %}
+    {% endfor %}
+    {% if key in ['escalas', 'repertorios', 'avisos'] %}
+    <p class="muted">Depois de selecionar {{ 'o ministério' if key == 'avisos' else 'o evento' }}, atualize as opções para carregar os registros vinculados.</p>
+    <button class="secondary" name="refresh" value="1" formnovalidate>Atualizar opções</button>
+    {% endif %}
+    <button type="submit">Salvar</button>
+  </form>
+</section>
+{% if item %}
+<details class="panel form-panel danger-panel">
+  <summary>Excluir registro</summary>
+  <form action="{{ url_for('views.delete', key=key, ident=item.id) }}" method="post" class="stack">
+    {{ csrf() }}
+    {% if key in ['agenda', 'ministerios', 'louvor', 'sonoplastia'] %}
+    <p>Os registros vinculados podem ser excluídos junto com este item.</p>
+    {% endif %}
+    <label class="check"><input type="checkbox" name="confirm" value="yes" required> Confirmo a exclusão.</label>
+    <button class="danger">Excluir definitivamente</button>
+  </form>
+</details>
+{% endif %}
+{% endblock %}

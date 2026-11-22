@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import csrf, filters, pagination %}
+{% macro agenda_filter() %}
+<select name="ministry" aria-label="Ministério">
+  <option value="">Todos os ministérios</option>
+  {% for id, name in ministries %}
+  <option value="{{ id }}"{% if request.args.get('ministry', type=int) == id %} selected{% endif %}>{{ name }}</option>
+  {% endfor %}
+</select>
+{% if calendar %}<input type="hidden" name="view" value="calendar"><input type="month" name="month" value="{{ calendar[0] }}" aria-label="Mês">{% endif %}
+{% endmacro %}
+{% block content %}
+<header class="page-heading">
+  <h1>{{ title }}</h1>
+  {% if can_add %}<a class="button" href="{{ url_for('views.edit', key=key) }}">Adicionar {{ module.singular }}</a>{% endif %}
+</header>
+{% if key in ['agenda', 'louvor', 'sonoplastia', 'repertorios', 'historico'] %}
+<nav class="subnav" aria-label="Seções relacionadas">
+  {% if key == 'agenda' %}
+    <a class="button secondary" href="{{ url_for('views.listing', key=key, q=term, ministry=request.args.get('ministry'), view='list') }}" {% if not calendar %}aria-current="page"{% endif %}>Lista</a>
+    <a class="button secondary" href="{{ url_for('views.listing', key=key, q=term, ministry=request.args.get('ministry'), view='calendar') }}" {% if calendar %}aria-current="page"{% endif %}>Calendário</a>
+  {% elif key in ['louvor', 'repertorios'] %}
+    <a class="button secondary" href="{{ url_for('views.listing', key='louvor') }}">Músicas</a>
+    <a class="button secondary" href="{{ url_for('views.listing', key='repertorios') }}">Repertórios</a>
+  {% else %}
+    <a class="button secondary" href="{{ url_for('views.listing', key='sonoplastia') }}">Equipamentos</a>
+    <a class="button secondary" href="{{ url_for('views.listing', key='historico') }}">Ocorrências e checklists</a>
+  {% endif %}
+</nav>
+{% endif %}
+{% if module.searches %}{{ filters(term, 'Pesquisar em ' ~ title, agenda_filter if key == 'agenda' else none) }}{% endif %}
+{% if key == 'escalas' %}
+<form class="filters" method="get">
+  <select name="period" aria-label="Período">
+    <option value="">Todos os períodos</option>
+    <option value="upcoming"{% if request.args.get('period') == 'upcoming' %} selected{% endif %}>Próximas escalas</option>
+    <option value="past"{% if request.args.get('period') == 'past' %} selected{% endif %}>Histórico</option>
+  </select>
+  <label class="check"><input type="checkbox" name="mine" value="yes"{% if request.args.get('mine') == 'yes' %} checked{% endif %}> Minhas escalas</label>
+  <button>Filtrar</button>
+</form>
+{% endif %}
+{% if calendar %}
+<section class="panel calendar" aria-label="Calendário mensal">
+  <div class="calendar-grid">
+    {% for day in ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] %}<strong>{{ day }}</strong>{% endfor %}
+    {% for week in calendar[1] %}{% for day in week %}
+      <div class="calendar-day">{% if day %}<span>{{ day }}</span>{% if calendar[2].get(day) %}<a href="#day-{{ day }}" aria-label="Eventos do dia {{ day }}">{{ calendar[2][day]|length }}</a>{% endif %}{% endif %}</div>
+    {% endfor %}{% endfor %}
+  </div>
+  <ul class="records compact">
+    {% for day, events in calendar[2]|dictsort %}
+      <li id="day-{{ day }}"><strong>{{ day }}/{{ calendar[0][-2:] }}</strong>
+        {% for event in events %}<span>{{ event.starts.strftime('%H:%M') }} · {{ event.title }}</span>{% endfor %}
+      </li>
+    {% else %}<li class="muted">Nenhum evento neste mês.</li>{% endfor %}
+  </ul>
+</section>
+{% else %}
+<div class="record-grid">
+  {% for item in result.items %}
+  <article class="panel record">
+    <h2>{{ value(item, module.fields[0]) }}</h2>
+    {% if key == 'avisos' %}<p class="pill">{{ 'Lido' if item.id in read_ids else 'Não lido' }}</p>{% endif %}
+    <dl>
+      {% for field in module.fields[1:] %}
+        {% set data = value(item, field) %}
+        {% if data is not none and data != '' %}<div><dt>{{ labels.get(field, field) }}</dt><dd>{{ data }}</dd></div>{% endif %}
+      {% endfor %}
+    </dl>
+    <div class="actions">
+      {% if key == 'avisos' and item.id not in read_ids %}
+        <form action="{{ url_for('views.mark_read', ident=item.id) }}" method="post">{{ csrf() }}<button class="secondary">Marcar como lido</button></form>
+      {% endif %}
+      {% if item.id in editable %}<a class="button secondary" href="{{ url_for('views.edit', key=key, ident=item.id) }}">Editar</a>{% endif %}
+    </div>
+  </article>
+  {% else %}<p class="panel muted">Nenhum registro encontrado.</p>{% endfor %}
+</div>
+{{ pagination(result) }}
+{% endif %}
+{% endblock %}
